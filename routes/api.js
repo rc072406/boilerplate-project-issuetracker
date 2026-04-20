@@ -19,27 +19,44 @@ module.exports = function (app) {
     })
     
     .post(async function (req, res){
-      let project = req.params.project;
-      const { issue_title, issue_text, created_by, assigned_to, status_text } = req.body;
+  let project = req.params.project;
+  const { issue_title, issue_text, created_by, assigned_to, status_text } = req.body;
 
-      // Requirement 4: Validation
-      if (!issue_title || !issue_text || !created_by) {
-        return res.json({ error: 'required field(s) missing' });
-      }
+  if (!issue_title || !issue_text || !created_by) {
+    return res.json({ error: 'required field(s) missing' });
+  }
 
-      const newIssue = new Issue({
-        project: project,
-        issue_title,
-        issue_text,
-        created_by,
-        assigned_to: assigned_to || "",
-        status_text: status_text || "",
-        open: true
-      });
+  const newIssue = new Issue({
+    project: project, // Keeping this for your DB logic
+    issue_title,
+    issue_text,
+    created_by,
+    assigned_to: assigned_to || "",
+    status_text: status_text || "",
+    open: true,
+    created_on: new Date(), // Explicitly set if your schema doesn't auto-gen
+    updated_on: new Date()
+  });
 
-      const savedIssue = await newIssue.save();
-      res.json(savedIssue);
-    })
+  try {
+    const savedIssue = await newIssue.save();
+    
+    // Construct the response object to exclude 'project' and '__v'
+    res.json({
+      _id: savedIssue._id,
+      issue_title: savedIssue.issue_title,
+      issue_text: savedIssue.issue_text,
+      created_on: savedIssue.created_on,
+      updated_on: savedIssue.updated_on,
+      created_by: savedIssue.created_by,
+      assigned_to: savedIssue.assigned_to,
+      open: savedIssue.open,
+      status_text: savedIssue.status_text
+    });
+  } catch (err) {
+    res.status(500).json({ error: 'could not save issue' });
+  }
+})
     
     .put(async function (req, res){
       let project = req.params.project;
